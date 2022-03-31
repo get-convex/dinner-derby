@@ -145,7 +145,7 @@ const Header = (props: { children: JSX.Element }): JSX.Element => {
       <Flex css={{ flexDirection: "row" }}>
         <Box css={{ flexGrow: 1 }}>
           <Text css={{ fontWeight: 500 }}>🐎 &nbsp;Dinner Derby</Text>
-          <Text>Choose where to go for dinner like a mayoral election.</Text>
+          <Text>Because you really do need ranked voting to decide where to go for dinner.</Text>
         </Box>
         <Box>{avatar}</Box>
       </Flex>
