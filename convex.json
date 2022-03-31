@@ -1,0 +1,11 @@
+{
+  "authInfo": [
+    {
+      "domain": "https://dev-1sfr-rpl.us.auth0.com",
+      "applicationID": "DBjaj1FETcPtmInSKi9gjOtMPu4NXe8H"
+    }
+  ],
+  "functions": "convex/",
+  "instanceName": "enchanted-opossum-226",
+  "origin": "https://enchanted-opossum-226.convex.cloud"
+}
