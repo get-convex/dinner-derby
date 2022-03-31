@@ -98,13 +98,7 @@ const TooltipContent = StyledContent;
 
 const Header = (props: { children: JSX.Element }): JSX.Element => {
   const convex = useConvex();
-  let {
-    isLoading,
-    isAuthenticated,
-    getIdTokenClaims,
-    user,
-    loginWithRedirect,
-  } = useAuth0();
+  let { isLoading, isAuthenticated, getIdTokenClaims, user } = useAuth0();
   useEffect(() => {
     if (isLoading) {
       return;

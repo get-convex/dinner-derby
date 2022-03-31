@@ -29,7 +29,9 @@ export const Voting = (props: {
 }) => {
   const { subject, instance, id } = props;
 
-  const [choices, setChoices] = useState(instance.votes.get(subject)?.order ?? []);
+  const [choices, setChoices] = useState(
+    instance.votes.get(subject)?.order ?? []
+  );
   const currentRanking = useQuery("voting:currentRanking", id);
   const votingMutation = useMutation("votingMutation:votingMutation");
   const doneVoting = useMutation("votingMutation:doneVoting");
@@ -54,14 +56,18 @@ export const Voting = (props: {
         {!isDone && (
           <Box>
             <SortableList items={choices} onSortEnd={onSortEnd} />
-            <Box css={{textAlign: "right"}}>
-              <Button variant="green" onClick={() => doneVoting(id)}>I&apos;m done.</Button>
+            <Box css={{ textAlign: "right" }}>
+              <Button variant="green" onClick={() => doneVoting(id)}>
+                I&apos;m done.
+              </Button>
             </Box>
           </Box>
         )}
         {isDone && (
           <ul>
-            {choices.map(choice => <li key={choice}>{choice}</li>)}
+            {choices.map((choice) => (
+              <li key={choice}>{choice}</li>
+            ))}
           </ul>
         )}
       </Box>

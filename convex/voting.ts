@@ -61,11 +61,27 @@ export async function currentRanking(instance: Id) {
     worstPerforming.set(A, scores[0]);
   }
 
-  // Step 4: Sort the choices by their worst performance.
-  const currentRanking = [...allChoices];
-  currentRanking.sort(
-    (A, B) => worstPerforming.get(B)! - worstPerforming.get(A)!
-  );
+  // Step 4: Compute a fallback score to break ties. A person's top vote gets
+  // `numParticipants` points, their second get `numParticipants - 1`, and so
+  // on.
+  const fallbackScore = new Map<string, number>();
+  for (const vote of instanceDoc.votes.values()) {
+    for (let i = 0; i < vote.order.length; i++) {
+      const choice = vote.order[i];
+      const newScore = (fallbackScore.get(choice) ?? 0) + (numParticipants - i);
+      fallbackScore.set(choice, newScore);
+    }
+  }
 
+  // Step 5: Sort the choices by their worst performance.
+  const currentRanking = [...allChoices];
+  currentRanking.sort((A, B) => {
+    const worseB = worstPerforming.get(B)!;
+    const worseA = worstPerforming.get(A)!;
+    if (worseA === worseB) {
+      return fallbackScore.get(B)! - fallbackScore.get(A)!;
+    }
+    return worseB - worseA;
+  });
   return currentRanking;
 }
