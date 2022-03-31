@@ -40,7 +40,7 @@ const InstancePage = () => {
   const router = useRouter();
   const { instance } = router.query;
   if (typeof instance !== "string") {
-    throw new Error(`Invalid instance ${instance}`);
+    return;
   }
   const id = Id.fromString(instance);
   return (
