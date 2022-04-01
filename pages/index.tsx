@@ -48,6 +48,7 @@ const DinnerDerby = () => {
   } else {
     const onClick = async () => {
       const id = await startInstance();
+      console.log(id, id.toString());
       Router.push(`/poll/${id.toString()}`);
     };
     body = (

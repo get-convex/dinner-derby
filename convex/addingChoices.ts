@@ -1,13 +1,13 @@
-import { auth, dbWriter, Id } from "@convex-dev/server";
+import { Id, mutation } from "@convex-dev/server";
 import { Choice, Instance } from "./common";
 
-export async function addChoice(instance: Id, choice: string) {
+export const addChoice = mutation(async ({ db, auth }, instance: Id, choice: string) => {
   const user = await auth.getUserIdentity();
   if (!user) {
     throw new Error("User isn't authenticated");
   }
   const subject = user.tokenIdentifier;
-  const instanceDoc: Instance = await dbWriter.get(instance);
+  const instanceDoc: Instance = await db.get(instance);
   if (instanceDoc.state !== "addingChoices") {
     throw new Error("Instance is in wrong state");
   }
@@ -21,16 +21,16 @@ export async function addChoice(instance: Id, choice: string) {
   const choices = instanceDoc.choices.get(subject)!;
   choices.names.add(choice);
 
-  await dbWriter.replace(instance, instanceDoc);
-}
+  db.replace(instance, instanceDoc);
+})
 
-export async function doneAdding(instance: Id) {
+export const doneAdding = mutation(async ({db, auth}, instance: Id) => {
   const user = await auth.getUserIdentity();
   if (!user) {
     throw new Error("User isn't authenticated");
   }
   const subject = user.tokenIdentifier;
-  const instanceDoc: Instance = await dbWriter.get(instance);
+  const instanceDoc: Instance = await db.get(instance);
   if (instanceDoc.state !== "addingChoices") {
     throw new Error("Instance is in wrong state");
   }
@@ -41,15 +41,15 @@ export async function doneAdding(instance: Id) {
     instanceDoc.choices.set(subject, { names: new Set(), done: false });
   }
   instanceDoc.choices.get(subject)!.done = true;
-  await dbWriter.replace(instance, instanceDoc);
-}
+  db.replace(instance, instanceDoc);
+});
 
-export async function startVoting(instance: Id) {
+export const startVoting = mutation(async ({db, auth}, instance: Id) =>  {
   const user = await auth.getUserIdentity();
   if (!user) {
     throw new Error("User isn't authenticated");
   }
-  const instanceDoc: Instance = await dbWriter.get(instance);
+  const instanceDoc: Instance = await db.get(instance);
   const subject = user.tokenIdentifier;
   if (subject !== instanceDoc.owner) {
     throw new Error("User isn't owner");
@@ -73,5 +73,5 @@ export async function startVoting(instance: Id) {
   for (const participant of instanceDoc.participants.keys()) {
     instanceDoc.votes.set(participant, { order: allChoices, done: false });
   }
-  await dbWriter.replace(instance, instanceDoc);
-}
+  db.replace(instance, instanceDoc);
+});

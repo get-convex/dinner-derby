@@ -33,8 +33,8 @@ export const Voting = (props: {
     instance.votes.get(subject)?.order ?? []
   );
   const currentRanking = useQuery("voting:currentRanking", id);
-  const votingMutation = useMutation("votingMutation:votingMutation");
-  const doneVoting = useMutation("votingMutation:doneVoting");
+  const changeVote = useMutation("voting:changeVote");
+  const doneVoting = useMutation("voting:doneVoting");
   const isDone = instance.votes.get(subject)?.done ?? false;
   const instanceDone = instance.state === "done";
 
@@ -47,7 +47,7 @@ export const Voting = (props: {
   }) => {
     const newItems = arrayMoveImmutable(choices, oldIndex, newIndex);
     setChoices(newItems);
-    votingMutation(id, newItems);
+    changeVote(id, newItems);
   };
   return (
     <Flex css={{ justifyContent: "space-evenly" }}>

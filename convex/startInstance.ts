@@ -1,7 +1,7 @@
-import { auth, dbWriter } from "@convex-dev/server";
+import { mutation, Id } from "@convex-dev/server";
 import { Instance } from "./common";
 
-export default async function startInstance() {
+export default mutation(async ({db, auth}): Promise<Id> => {
   const user = await auth.getUserIdentity();
   if (!user) {
     throw new Error("User isn't authenticated");
@@ -13,6 +13,7 @@ export default async function startInstance() {
     choices: new Map(),
     votes: new Map(),
   };
-  const document = await dbWriter.insert("instances", instance);
-  return document._id;
-}
+  const hm = db.insert("instances", instance);
+  console.log(hm);
+  return hm;
+});

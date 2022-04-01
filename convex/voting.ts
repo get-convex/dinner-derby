@@ -1,8 +1,7 @@
-import { Id } from "@convex-dev/react";
-import { auth, db } from "@convex-dev/server";
+import { Id, mutation, query } from "@convex-dev/server";
 import { Choice, Instance } from "./common";
 
-export async function currentRanking(instance: Id) {
+export const currentRanking = query(async ({db, auth}, instance: Id) => {
   const user = await auth.getUserIdentity();
   if (!user) {
     throw new Error("User isn't authenticated");
@@ -84,4 +83,43 @@ export async function currentRanking(instance: Id) {
     return worseB - worseA;
   });
   return currentRanking;
-}
+});
+
+export const changeVote = mutation(async ({db, auth}, instance: Id, newOrder: Choice[]) => {
+  const user = await auth.getUserIdentity();
+  if (!user) {
+    throw new Error("User isn't authenticated");
+  }
+  const subject = user.tokenIdentifier;
+  const instanceDoc: Instance = await db.get(instance);
+  if (instanceDoc.state !== "voting") {
+    throw new Error("Instance is in wrong state");
+  }
+  if (!instanceDoc.votes.has(subject)) {
+    throw new Error("User isn't in the poll");
+  }
+  instanceDoc.votes.get(subject)!.order = newOrder;
+  db.replace(instance, instanceDoc);
+});
+
+export const doneVoting = mutation(async ({db, auth}, instance: Id) => {
+  const user = await auth.getUserIdentity();
+  if (!user) {
+    throw new Error("User isn't authenticated");
+  }
+  const subject = user.tokenIdentifier;
+  const instanceDoc: Instance = await db.get(instance);
+  if (instanceDoc.state !== "voting") {
+    throw new Error("Instance is in wrong state");
+  }
+  if (!instanceDoc.votes.has(subject)) {
+    throw new Error("User isn't in the poll");
+  }
+  instanceDoc.votes.get(subject)!.done = true;
+
+  const allDone = [...instanceDoc.votes.values()].every((vote) => vote.done);
+  if (allDone) {
+    instanceDoc.state = "done";
+  }
+  db.replace(instance, instanceDoc);
+});

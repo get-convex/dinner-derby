@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^1.9.0",
-    "@convex-dev/cli": "^0.0.62",
-    "@convex-dev/react": "^0.0.62",
-    "@convex-dev/server": "^0.0.62",
+    "@convex-dev/cli": "^0.0.67",
+    "@convex-dev/react": "^0.0.67",
+    "@convex-dev/server": "^0.0.67",
     "@radix-ui/colors": "^0.1.8",
     "@radix-ui/react-avatar": "^0.1.4",
     "@radix-ui/react-label": "^0.1.5",
