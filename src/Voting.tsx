@@ -14,11 +14,13 @@ const SortableItem = SortableElement((props: { value: string }) => (
 ));
 const SortableList = SortableContainer((props: { items: string[] }) => {
   return (
-    <ul>
-      {props.items.map((value, i) => (
-        <SortableItem key={value} index={i} value={value} />
-      ))}
-    </ul>
+    <ol>
+      {props.items.map((value, i) => {
+        return (
+          <SortableItem key={value} index={i} value={value} />
+        )
+      })}
+    </ol>
   );
 });
 
@@ -38,14 +40,23 @@ export const Voting = (props: {
   const isDone = instance.votes.get(subject)?.done ?? false;
   const instanceDone = instance.state === "done";
 
-  const onSortEnd = ({
-    oldIndex,
-    newIndex,
-  }: {
-    oldIndex: number;
-    newIndex: number;
-  }) => {
-    const newItems = arrayMoveImmutable(choices, oldIndex, newIndex);
+  const firstPlace = new Map();
+  const secondPlace = new Map();
+  const thirdPlace =  new Map();
+  for (const vote of instance.votes.values()) {
+    if (vote.order.length >= 1) {
+      firstPlace.set(vote.order[0], 1 + (firstPlace.get(vote.order[0]) ?? 0));
+    }
+    if (vote.order.length >= 2) {
+      secondPlace.set(vote.order[1], 1 + (secondPlace.get(vote.order[1]) ?? 0));
+    }
+    if (vote.order.length >= 3) {
+      thirdPlace.set(vote.order[2], 1 + (thirdPlace.get(vote.order[2]) ?? 0));
+    }
+  }
+
+  const onSortEnd = (props: { oldIndex: number, newIndex: number }) => {
+    const newItems = arrayMoveImmutable(choices, props.oldIndex, props.newIndex);
     setChoices(newItems);
     changeVote(id, newItems);
   };
@@ -64,22 +75,34 @@ export const Voting = (props: {
           </Box>
         )}
         {isDone && (
-          <ul>
-            {choices.map((choice) => (
-              <li key={choice}>{choice}</li>
-            ))}
-          </ul>
+          <ol>
+            {choices.map((choice, i) => {
+              return (
+                <li key={choice}>{choice}</li>
+              );
+            })}
+          </ol>
         )}
       </Box>
       <Separator decorative orientation="vertical" css={{ margin: "0 15px" }} />
       <Box css={{ flexGrow: 1, flexBasis: "50%" }}>
         {instanceDone ? "Final ranking" : "Current ranking"}
         {currentRanking && (
-          <ul>
-            {currentRanking.map((choice) => (
-              <li key={choice}>{choice}</li>
-            ))}
-          </ul>
+          <ol>
+            {currentRanking.map((choice) => {
+              const counts = [];
+              const firstCount = firstPlace.get(choice);
+              const secondCount = secondPlace.get(choice);
+              const thirdCount = thirdPlace.get(choice);
+              firstCount && counts.push(`🥇: ${firstCount}`);
+              secondCount && counts.push(`🥈: ${secondCount}`);
+              thirdCount && counts.push(`🥉: ${thirdCount}`);
+              const countsStr = counts.length ? ` (${counts.join(", ")})` : null;
+              return (
+                <li key={choice}>{choice}{countsStr}</li>
+              )
+            })}
+          </ol>
         )}
       </Box>
     </Flex>
