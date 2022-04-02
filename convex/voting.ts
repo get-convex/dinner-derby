@@ -14,75 +14,55 @@ export const currentRanking = query(async ({db, auth}, instance: Id) => {
   if (!instanceDoc.votes.has(subject)) {
     throw new Error("User isn't in the poll");
   }
-  const numParticipants = [...instanceDoc.participants.entries()].length;
 
-  // Step 1: Accumulate all of the choices.
-  const allChoicesSet: Set<Choice> = new Set();
+  // Collect all of the choices.
+  const remainingChoices: Set<Choice> = new Set();
   for (const choices of instanceDoc.choices.values()) {
     for (const choice of choices.names) {
-      allChoicesSet.add(choice);
-    }
-  }
-  const allChoices = [...allChoicesSet.keys()];
-  allChoices.sort();
-
-  // Step 2: Build up a table for pairs of choices A and B tallying
-  // how many people prefer A to B.
-  const preferenceTable = new Map<string, number>();
-  for (let i = 0; i < allChoices.length; i++) {
-    const A = allChoices[i];
-    for (let j = i + 1; j < allChoices.length; j++) {
-      const B = allChoices[j];
-      let numPreferred = 0;
-      for (const vote of instanceDoc.votes.values()) {
-        if (vote.order.indexOf(A) < vote.order.indexOf(B)) {
-          numPreferred += 1;
-        }
-      }
-      preferenceTable.set(`${A}:${B}`, numPreferred);
-      preferenceTable.set(`${B}:${A}`, numParticipants - numPreferred);
+      remainingChoices.add(choice);
     }
   }
 
-  // Step 3: For each choice, find its worst performance.
-  const worstPerforming = new Map<string, number>();
-  for (let i = 0; i < allChoices.length; i++) {
-    const A = allChoices[i];
-    const scores: number[] = [];
-    for (let j = 0; j < allChoices.length; j++) {
-      if (i == j) {
-        continue;
-      }
-      const B = allChoices[j];
-      scores.push(preferenceTable.get(`${A}:${B}`)!);
-    }
-    scores.sort();
-    worstPerforming.set(A, scores[0]);
-  }
-
-  // Step 4: Compute a fallback score to break ties. A person's top vote gets
-  // `numParticipants` points, their second get `numParticipants - 1`, and so
-  // on.
-  const fallbackScore = new Map<string, number>();
+  // As a tiebreaker, compute the Borda score for each choice. For each
+  // ballot, this gives (numChoices - 1 - i) points to the ith choice.
+  const bordaScore = new Map<string, number>();
   for (const vote of instanceDoc.votes.values()) {
     for (let i = 0; i < vote.order.length; i++) {
       const choice = vote.order[i];
-      const newScore = (fallbackScore.get(choice) ?? 0) + (numParticipants - i);
-      fallbackScore.set(choice, newScore);
+      const existing = bordaScore.get(choice) ?? 0;
+      const increment = remainingChoices.size - i - 1;
+      bordaScore.set(choice, existing + increment);
     }
   }
 
-  // Step 5: Sort the choices by their worst performance.
-  const currentRanking = [...allChoices];
-  currentRanking.sort((A, B) => {
-    const worseB = worstPerforming.get(B)!;
-    const worseA = worstPerforming.get(A)!;
-    if (worseA === worseB) {
-      return fallbackScore.get(B)! - fallbackScore.get(A)!;
+  const eliminated = [];
+  while (remainingChoices.size > 1) {
+    // Each round we'll eliminate the choice with the fewest first-place votes,
+    // breaking ties using the Borda score we computed above.
+    const firstVotes = new Map<string, number>();
+    for (const vote of instanceDoc.votes.values()) {
+      for (const choice of vote.order) {
+        if (remainingChoices.has(choice)) {
+          firstVotes.set(choice, (firstVotes.get(choice) ?? 0) + 1);
+          break;
+        }
+      }
     }
-    return worseB - worseA;
-  });
-  return currentRanking;
+    const choices = [...remainingChoices];
+    choices.sort((a, b) => {
+      const aScore = firstVotes.get(a) ?? 0;
+      const bScore = firstVotes.get(b) ?? 0;
+      if (aScore == bScore) {
+        return (bordaScore.get(a) ?? 0) - (bordaScore.get(b) ?? 0);
+      };
+      return aScore - bScore;
+    });
+    const toEliminate = choices[0];
+    eliminated.push(toEliminate);
+    remainingChoices.delete(toEliminate);
+  }
+  // Return the winner with everyone else in reverse order of elimination.
+  return [...remainingChoices].concat(eliminated.reverse());
 });
 
 export const changeVote = mutation(async ({db, auth}, instance: Id, newOrder: Choice[]) => {
