@@ -1,7 +1,6 @@
-import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
-import { ConvexProvider, Id } from "@convex-dev/react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { Id } from "@convex-dev/react";
 import { useRouter } from "next/router";
-import { convex } from "../../common";
 import { AddingChoices } from "../../src/AddingChoices";
 import Box from "../../components/box";
 import Button from "../../components/button";
@@ -11,19 +10,18 @@ import styles from "../../styles/Home.module.css";
 import { Voting } from "../../src/Voting";
 
 const Instance = (props: { id: Id }) => {
-  let body;
   const instance = useQuery("getInstance", props.id);
   const subject = useQuery("loggedInUser");
-  let { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
-
-  if (!instance || subject === undefined) {
-    body = <span>Loading...</span>;
-  } else if (!subject || isLoading || !isAuthenticated) {
+  const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+  let body;
+  if (!isAuthenticated || isLoading) {
     body = (
       <Box css={{ textAlign: "center" }}>
-        <Button onClick={() => loginWithRedirect()}>Log in</Button>
+        <Button onClick={() => loginWithRedirect({redirectUri: `${window.location.origin}/?instance=${props.id.toString()}`})}>Log in</Button>
       </Box>
     );
+  } else if (!instance || !subject) {
+    body = <span>Loading...</span>;
   } else if (instance.state === "addingChoices") {
     body = (
       <AddingChoices subject={subject} instance={instance} id={props.id} />
@@ -45,18 +43,7 @@ const InstancePage = () => {
   const id = Id.fromString(instance);
   return (
     <main className={styles.main}>
-      <Auth0Provider
-        domain="dev-1sfr-rpl.us.auth0.com"
-        clientId="DBjaj1FETcPtmInSKi9gjOtMPu4NXe8H"
-        redirectUri={
-          typeof window !== "undefined" ? window.location.origin : undefined
-        }
-        cacheLocation="localstorage"
-      >
-        <ConvexProvider client={convex}>
-          <Instance id={id} />
-        </ConvexProvider>
-      </Auth0Provider>
+      <Instance id={id} />
     </main>
   );
 };

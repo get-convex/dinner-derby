@@ -13,7 +13,5 @@ export default mutation(async ({db, auth}): Promise<Id> => {
     choices: new Map(),
     votes: new Map(),
   };
-  const hm = db.insert("instances", instance);
-  console.log(hm);
-  return hm;
+  return db.insert("instances", instance);
 });
